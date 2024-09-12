@@ -32,16 +32,22 @@ class PropEletrica:
         self.m_pp = self.params.get("m_pp", 0)  # Massa do sistema propulsivo
         self.m_pl = self.params.get("m_pl", 0)  # Massa do pay load
     
+    
+        # Painel
+        self.efic_solar =  self.params.get("efic_solar", 0)
+        self.i_sol = self.params.get("i_sol", 0)
+        self.sigma_painel = self.params.get("sigma_painel", 0)   
+    
     def calcula_massas(self):
         # Calculando a massa do sistema propulsivo se não for fornecida
+           
+        
         if self.m_prop == 0:  
             self.m_prop_ponto = self.empuxo / (self.isp * self.g0)
-            
             if self.tp != 0:
                 self.m_prop = self.m_prop_ponto * self.tp
                 print(f'Massa do sistema propulsivo: {self.m_prop} kg')
-        
-        
+
         if self.m_pp == 0 and self.alpha != 0:
             pe = self.calcula_pot_eletrica()
             self.m_pp = pe / self.alpha if self.alpha != 0 else 0
@@ -102,7 +108,6 @@ class PropEletrica:
         else:
             self.vc = 0
         
-        
         self.delta_v = self.calcula_delta_v() if self.delta_v == 0 else self.delta_v
         self.aceralaracao = self.aceleracao_veiculo() if self.aceralaracao == 0 else self.aceralaracao
         
@@ -110,11 +115,28 @@ class PropEletrica:
         return {
             "m_prop_ponto": self.m_prop_ponto,
             "m_prop": self.m_prop,
-            "pe": self.pe,
             "m_pp": self.m_pp,
+            "massa_total":self.m0,
+            "P_eletrica": self.pe,
+            "P_jet":self.p_jet,
             "delta_v": self.delta_v,
             "a": self.aceralaracao,
         }
+    
+    def calcula_parametros_painel(self):
+        self.area_painel = self.pe / (self.efic_solar * self.i_sol)
+        self.m_painel = self.area_painel * self.sigma_painel 
+        
+        return {
+            "Area painel": self.area_painel,
+            "massa painel": self.m_painel,
+
+        }
+    
+        
+    
+    
+    
 
 """
 Perguntas principais:
@@ -126,23 +148,37 @@ Perguntas principais:
 
 params = {
     "delta_v": 4000, # km/s
-    "m_pl": 367, # SMART-1 (Small Missions for Advanced Research in Technology)
-    "m0": 8000,
+    "m_pl": 8000, # SMART-1 (Small Missions for Advanced Research in Technology)
     "propelente": "xenonio", # sem unidade
-    "empuxo": 68 * (10**-3), # Newtons
-    "isp": 1640, # segundos
-    "tp": 13 * (60 * 60 * 24 * 30), # segundos - 4 semanas
+    "empuxo": 70 * (10**-3), # Newtons 
+    "isp": 2000, # segundos
+    "tp": 26 * (60 * 60 * 24 * 30), # segundos - 4 semanas
     "nt":0.6,
+    "alpha": 80,
+    "efic_solar": 0.15,
+    "i_sol": 1000 ,
+    "sigma_painel": 6
+
 }
 
 # Instanciando e executando a classe
 prop_el = PropEletrica(params)
 massa_total = prop_el.calcula_massas()
 relacoes_fundamentais = prop_el.calcula_relacoes_fundamentais()
+parametros_painel = prop_el.calcula_parametros_painel()
 
-print(f'Massa total: {massa_total} kg')
-print('Relacoes Fundamentais:')
-
-
+print("################################ Relacoes Fundamentais: ################################")
 for chave, valor in relacoes_fundamentais.items():
     print(f'{chave}: {valor}')
+
+print("########################################################################################")
+
+
+print("################################ Painel: ################################")
+for chave, valor in parametros_painel.items():
+    print(f'{chave}: {valor}')
+
+print("########################################################################################")
+
+
+
